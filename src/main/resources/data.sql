@@ -1,4 +1,5 @@
 CREATE TABLE `china_city_geo` (
+  `code` varchar(255) DEFAULT NULL COMMENT '城市编码',
   `area` varchar(255) DEFAULT NULL COMMENT '县（区）',
   `city` varchar(255) DEFAULT NULL COMMENT '市',
   `province` varchar(255) DEFAULT NULL COMMENT '省份',

@@ -20,9 +20,16 @@ import java.util.Collections;
  */
 public class GeoCity {
 
-    private static Connection h2Conn;
+    /**
+     * 保持长连接，不关闭
+     */
+    private Connection h2Conn;
+    private static volatile GeoCity geoCity;
 
-    static {
+    /**
+     * 懒加载，获取h2连接
+     */
+    private GeoCity() {
         try {
             h2Conn = H2Conn.getInstance().getConn();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -53,6 +60,21 @@ public class GeoCity {
         }
     }
 
+    public Connection getH2Conn() {
+        return h2Conn;
+    }
+
+    public static GeoCity getInstance() {
+        if (geoCity == null) {
+            synchronized (GeoCity.class) {
+                if (geoCity == null) {
+                    geoCity = new GeoCity();
+                }
+            }
+        }
+        return geoCity;
+    }
+
     /**
      * 查找指定经纬度所在的省市县
      *
@@ -65,9 +87,10 @@ public class GeoCity {
         try {
             String geoHash = GeohashUtils.encodeLatLon(lat, lon);
             String target = geoHash.substring(0, 3) + "%";
-            Statement st = h2Conn.createStatement();
+            Statement st = GeoCity.getInstance().getH2Conn().createStatement();
             ResultSet rs = st.executeQuery("select * from china_city_geo where geo_hash like '" + target + "'");
             while (rs.next()) {
+                String code = rs.getString("code");
                 String province = rs.getString("province");
                 String city = rs.getString("city");
                 String area = rs.getString("area");
@@ -75,6 +98,7 @@ public class GeoCity {
                 Double longitude = Double.parseDouble(rs.getString("lon"));
                 String pointGeoHash = rs.getString("geo_hash");
                 ChinaCity chinaCity = new ChinaCity();
+                chinaCity.setCode(code);
                 chinaCity.setProvince(province);
                 chinaCity.setCity(city);
                 chinaCity.setArea(area);

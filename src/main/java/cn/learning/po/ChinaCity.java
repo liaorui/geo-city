@@ -6,6 +6,10 @@ package cn.learning.po;
  */
 public class ChinaCity {
     /**
+     * 城市编码
+     */
+    private String code;
+    /**
      * 省
      */
     private String province;
@@ -29,6 +33,14 @@ public class ChinaCity {
      * geo hash
      */
     private String geoHash;
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
 
     public String getProvince() {
         return province;
@@ -79,7 +91,7 @@ public class ChinaCity {
     }
 
     @Override public String toString() {
-        return "ChinaCity{" + "province='" + province + '\'' + ", city='" + city + '\'' + ", area='" + area + '\''
-            + ", lat=" + lat + ", lon=" + lon + ", geoHash='" + geoHash + '\'' + '}';
+        return "ChinaCity{" + "code='" + code + '\'' + ", province='" + province + '\'' + ", city='" + city + '\''
+            + ", area='" + area + '\'' + ", lat=" + lat + ", lon=" + lon + ", geoHash='" + geoHash + '\'' + '}';
     }
 }
