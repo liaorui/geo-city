@@ -7,10 +7,7 @@ import com.spatial4j.core.distance.DistanceUtils;
 import com.spatial4j.core.io.GeohashUtils;
 
 import java.io.*;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -75,6 +72,49 @@ public class GeoCity {
         return geoCity;
     }
 
+    public static ChinaCity getCityCode(String cityName) {
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            String sql = "select * from china_city_geo where city like ?";
+            ps = GeoCity.getInstance().getH2Conn().prepareStatement(sql);
+            ps.setString(1, cityName + "%");
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                String code = rs.getString("code");
+                String province = rs.getString("province");
+                String city = rs.getString("city");
+                String area = rs.getString("area");
+                Double latitude = Double.parseDouble(rs.getString("lat"));
+                Double longitude = Double.parseDouble(rs.getString("lon"));
+                String pointGeoHash = rs.getString("geo_hash");
+                ChinaCity chinaCity = new ChinaCity();
+                chinaCity.setCode(code);
+                chinaCity.setProvince(province);
+                chinaCity.setCity(city);
+                chinaCity.setArea(area);
+                chinaCity.setLat(latitude);
+                chinaCity.setLon(longitude);
+                chinaCity.setGeoHash(pointGeoHash);
+                return chinaCity;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+        }
+        return null;
+    }
+
     /**
      * 查找指定经纬度所在的省市县
      *
@@ -87,8 +127,10 @@ public class GeoCity {
         try {
             String geoHash = GeohashUtils.encodeLatLon(lat, lon);
             String target = geoHash.substring(0, 3) + "%";
-            Statement st = GeoCity.getInstance().getH2Conn().createStatement();
-            ResultSet rs = st.executeQuery("select * from china_city_geo where geo_hash like '" + target + "'");
+            String sql = "select * from china_city_geo where geo_hash like ?";
+            PreparedStatement ps = GeoCity.getInstance().getH2Conn().prepareStatement(sql);
+            ps.setString(1, target);
+            ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 String code = rs.getString("code");
                 String province = rs.getString("province");
@@ -108,7 +150,7 @@ public class GeoCity {
                 cityList.add(chinaCity);
             }
             rs.close();
-            st.close();
+            ps.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }

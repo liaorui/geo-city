@@ -22,4 +22,17 @@ public class AppTest {
         ChinaCity city = GeoCity.locate(42.74481320560531, 93.12168009045864);
         System.out.println(city);
     }
+
+    @Test
+    public void testCityCode() {
+        // 防止SQL注入
+       ChinaCity city = GeoCity.getCityCode("'%' or 1 = 1");
+        System.out.println(city);
+    }
+
+    @Test
+    public void testCityCode2() {
+        ChinaCity city = GeoCity.getCityCode("北京市");
+        System.out.println(city);
+    }
 }

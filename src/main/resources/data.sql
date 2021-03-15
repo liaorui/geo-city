@@ -9,3 +9,4 @@ CREATE TABLE `china_city_geo` (
 ) as select * from CSVREAD('classpath:china_city_geo.csv');
 
 CREATE INDEX idx_hash ON china_city_geo(geo_hash);
+CREATE INDEX idx_city ON china_city_geo(city);
