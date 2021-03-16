@@ -1,5 +1,5 @@
 CREATE TABLE `china_city_geo` (
-  `code` varchar(255) DEFAULT NULL COMMENT '城市编码',
+  `code` integer DEFAULT NULL COMMENT '城市编码',
   `area` varchar(255) DEFAULT NULL COMMENT '县（区）',
   `city` varchar(255) DEFAULT NULL COMMENT '市',
   `province` varchar(255) DEFAULT NULL COMMENT '省份',
@@ -10,3 +10,4 @@ CREATE TABLE `china_city_geo` (
 
 CREATE INDEX idx_hash ON china_city_geo(geo_hash);
 CREATE INDEX idx_city ON china_city_geo(city);
+CREATE INDEX idx_code ON china_city_geo(code);

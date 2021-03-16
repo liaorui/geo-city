@@ -32,7 +32,13 @@ public class AppTest {
 
     @Test
     public void testCityCode2() {
-        ChinaCity city = GeoCity.getCityCode("北京市");
+        ChinaCity city = GeoCity.getCityCode("广州");
+        System.out.println(city);
+    }
+
+    @Test
+    public void testCity() {
+        ChinaCity city = GeoCity.getCity(440100);
         System.out.println(city);
     }
 }

@@ -72,6 +72,47 @@ public class GeoCity {
         return geoCity;
     }
 
+    /**
+     * 根据城市编码查询城市
+     *
+     * @param cityCode
+     * @return
+     */
+    public static ChinaCity getCity(int cityCode) {
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            String sql = "select * from china_city_geo where code = ?";
+            ps = GeoCity.getInstance().getH2Conn().prepareStatement(sql);
+            ps.setInt(1, cityCode);
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                ChinaCity chinaCity = packet(rs);
+                return chinaCity;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 根据城市名称查询编码
+     *
+     * @param cityName
+     * @return
+     */
     public static ChinaCity getCityCode(String cityName) {
         PreparedStatement ps = null;
         ResultSet rs = null;
@@ -81,21 +122,7 @@ public class GeoCity {
             ps.setString(1, cityName + "%");
             rs = ps.executeQuery();
             while (rs.next()) {
-                String code = rs.getString("code");
-                String province = rs.getString("province");
-                String city = rs.getString("city");
-                String area = rs.getString("area");
-                Double latitude = Double.parseDouble(rs.getString("lat"));
-                Double longitude = Double.parseDouble(rs.getString("lon"));
-                String pointGeoHash = rs.getString("geo_hash");
-                ChinaCity chinaCity = new ChinaCity();
-                chinaCity.setCode(code);
-                chinaCity.setProvince(province);
-                chinaCity.setCity(city);
-                chinaCity.setArea(area);
-                chinaCity.setLat(latitude);
-                chinaCity.setLon(longitude);
-                chinaCity.setGeoHash(pointGeoHash);
+                ChinaCity chinaCity = packet(rs);
                 return chinaCity;
             }
         } catch (SQLException e) {
@@ -132,21 +159,7 @@ public class GeoCity {
             ps.setString(1, target);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                String code = rs.getString("code");
-                String province = rs.getString("province");
-                String city = rs.getString("city");
-                String area = rs.getString("area");
-                Double latitude = Double.parseDouble(rs.getString("lat"));
-                Double longitude = Double.parseDouble(rs.getString("lon"));
-                String pointGeoHash = rs.getString("geo_hash");
-                ChinaCity chinaCity = new ChinaCity();
-                chinaCity.setCode(code);
-                chinaCity.setProvince(province);
-                chinaCity.setCity(city);
-                chinaCity.setArea(area);
-                chinaCity.setLat(latitude);
-                chinaCity.setLon(longitude);
-                chinaCity.setGeoHash(pointGeoHash);
+                ChinaCity chinaCity = packet(rs);
                 cityList.add(chinaCity);
             }
             rs.close();
@@ -176,6 +189,25 @@ public class GeoCity {
             return cityList.get(0);
         }
         return null;
+    }
+
+    private static ChinaCity packet(ResultSet rs) throws SQLException {
+        Integer code = rs.getInt("code");
+        String province = rs.getString("province");
+        String city = rs.getString("city");
+        String area = rs.getString("area");
+        Double latitude = Double.parseDouble(rs.getString("lat"));
+        Double longitude = Double.parseDouble(rs.getString("lon"));
+        String pointGeoHash = rs.getString("geo_hash");
+        ChinaCity chinaCity = new ChinaCity();
+        chinaCity.setCode(code + "");
+        chinaCity.setProvince(province);
+        chinaCity.setCity(city);
+        chinaCity.setArea(area);
+        chinaCity.setLat(latitude);
+        chinaCity.setLon(longitude);
+        chinaCity.setGeoHash(pointGeoHash);
+        return chinaCity;
     }
 
 }
