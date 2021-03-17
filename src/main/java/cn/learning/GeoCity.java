@@ -17,25 +17,10 @@ import java.util.Collections;
  */
 public class GeoCity {
 
-    /**
-     * 保持长连接，不关闭
-     */
-    private Connection h2Conn;
-    private static volatile GeoCity geoCity;
-
-    /**
-     * 懒加载，获取h2连接
-     */
-    private GeoCity() {
+    static {
+        // h2初始化建表
         try {
-            h2Conn = H2Conn.getInstance().getConn();
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                try {
-                    h2Conn.close();
-                } catch (SQLException throwables) {
-                    throwables.printStackTrace();
-                }
-            }));
+            Connection h2Conn = H2Conn.getInstance().getConn();
             Statement st = h2Conn.createStatement();
             InputStream is = GeoCity.class.getResourceAsStream("/data.sql");
             BufferedReader reader = new BufferedReader(new InputStreamReader(is, "utf-8"));
@@ -46,8 +31,7 @@ public class GeoCity {
             }
             st.execute(builder.toString());
             st.close();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            h2Conn.close();
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         } catch (UnsupportedEncodingException e) {
@@ -57,21 +41,6 @@ public class GeoCity {
         }
     }
 
-    public Connection getH2Conn() {
-        return h2Conn;
-    }
-
-    public static GeoCity getInstance() {
-        if (geoCity == null) {
-            synchronized (GeoCity.class) {
-                if (geoCity == null) {
-                    geoCity = new GeoCity();
-                }
-            }
-        }
-        return geoCity;
-    }
-
     /**
      * 根据城市编码查询城市
      *
@@ -79,19 +48,21 @@ public class GeoCity {
      * @return
      */
     public static ChinaCity getCity(int cityCode) {
+        Connection h2Conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
+        String sql = "select * from china_city_geo where code = ?";
         try {
-            String sql = "select * from china_city_geo where code = ?";
-            ps = GeoCity.getInstance().getH2Conn().prepareStatement(sql);
+            h2Conn = H2Conn.getInstance().getConn();
+            ps = h2Conn.prepareStatement(sql);
             ps.setInt(1, cityCode);
             rs = ps.executeQuery();
             while (rs.next()) {
                 ChinaCity chinaCity = packet(rs);
                 return chinaCity;
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
         } finally {
             try {
                 if (rs != null) {
@@ -100,10 +71,14 @@ public class GeoCity {
                 if (ps != null) {
                     ps.close();
                 }
+                if (h2Conn != null) {
+                    h2Conn.close();
+                }
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
         }
+
         return null;
     }
 
@@ -114,11 +89,13 @@ public class GeoCity {
      * @return
      */
     public static ChinaCity getCityCode(String cityName) {
+        Connection h2Conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
+        String sql = "select * from china_city_geo where city like ?";
         try {
-            String sql = "select * from china_city_geo where city like ?";
-            ps = GeoCity.getInstance().getH2Conn().prepareStatement(sql);
+            h2Conn = H2Conn.getInstance().getConn();
+            ps = h2Conn.prepareStatement(sql);
             ps.setString(1, cityName + "%");
             rs = ps.executeQuery();
             while (rs.next()) {
@@ -134,6 +111,9 @@ public class GeoCity {
                 }
                 if (ps != null) {
                     ps.close();
+                }
+                if (h2Conn != null) {
+                    h2Conn.close();
                 }
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
@@ -151,21 +131,39 @@ public class GeoCity {
      */
     public static ChinaCity locate(double lat, double lon) {
         ArrayList<ChinaCity> cityList = new ArrayList<>();
+        String geoHash = GeohashUtils.encodeLatLon(lat, lon);
+        String target = geoHash.substring(0, 3) + "%";
+
+        String sql = "select * from china_city_geo where geo_hash like ?";
+
+        Connection h2Conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
         try {
-            String geoHash = GeohashUtils.encodeLatLon(lat, lon);
-            String target = geoHash.substring(0, 3) + "%";
-            String sql = "select * from china_city_geo where geo_hash like ?";
-            PreparedStatement ps = GeoCity.getInstance().getH2Conn().prepareStatement(sql);
+            h2Conn = H2Conn.getInstance().getConn();
+            ps = h2Conn.prepareStatement(sql);
             ps.setString(1, target);
-            ResultSet rs = ps.executeQuery();
+            rs = ps.executeQuery();
             while (rs.next()) {
                 ChinaCity chinaCity = packet(rs);
                 cityList.add(chinaCity);
             }
-            rs.close();
-            ps.close();
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (ps != null) {
+                    ps.close();
+                }
+                if (h2Conn != null) {
+                    h2Conn.close();
+                }
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
         }
         if (cityList.size() > 0) {
             /**
